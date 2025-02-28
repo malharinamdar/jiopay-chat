@@ -63,9 +63,9 @@ class JioPayChatbot:
                 api_key=AZURE_OPENAI_KEY,  # ✅ Fix: Use `api_key`
                 azure_endpoint=AZURE_OPENAI_ENDPOINT,
                 deployment=AZURE_DEPLOYMENT_NAME,
+                model="gpt-35-turbo",
                 temperature=0.7,
                 max_tokens=512,
-                model_kwargs={"engine": "text-davinci-003"}
             )
 
             self.qa_chain = RetrievalQA.from_chain_type(
