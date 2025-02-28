@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 try:
-    os.environ["AZURE_OPENAI_API_KEY"] = st.secrets["AZURE_OPENAI_API_KEY"]
+    os.environ["AZURE_OPENAI_API_KEY"] = st.secrets["AZURE_OPENAI_KEY"]
     os.environ["AZURE_OPENAI_ENDPOINT"] = st.secrets["AZURE_OPENAI_ENDPOINT"]
     os.environ["AZURE_DEPLOYMENT_NAME"] = st.secrets["AZURE_DEPLOYMENT_NAME"]
 except (AttributeError, KeyError):
-    os.environ["AZURE_OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_API_KEY")
+    os.environ["AZURE_OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_KEY")
     os.environ["AZURE_OPENAI_ENDPOINT"] = os.getenv("AZURE_OPENAI_ENDPOINT")
     os.environ["AZURE_DEPLOYMENT_NAME"] = os.getenv("AZURE_DEPLOYMENT_NAME")
 
@@ -23,7 +23,7 @@ class JioPayChatbot:
     def __init__(self):
         """Initialize the chatbot with Azure OpenAI."""
         self.embeddings = OpenAIEmbeddings(
-            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_key=os.environ["AZURE_OPENAI_KEY"],
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             deployment_name=os.environ["AZURE_DEPLOYMENT_NAME"]
         )
@@ -64,7 +64,7 @@ class JioPayChatbot:
     def initialize_qa(self):
         """Initialize RAG with Azure OpenAI"""
         llm = AzureOpenAI(
-            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_key=os.environ["AZURE_OPENAI_KEY"],
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             deployment_name=os.environ["AZURE_DEPLOYMENT_NAME"],
             temperature=0.7,
