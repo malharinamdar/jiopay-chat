@@ -1,14 +1,15 @@
 import json
 import os
+import streamlit as st
+from dotenv import load_dotenv
 from langchain_openai import AzureOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_text_splitters import TokenTextSplitter
-import streamlit as st
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
+
 try:
     os.environ["AZURE_OPENAI_KEY"] = st.secrets["AZURE_OPENAI_KEY"]
     os.environ["AZURE_OPENAI_ENDPOINT"] = st.secrets["AZURE_OPENAI_ENDPOINT"]
@@ -18,32 +19,33 @@ except (AttributeError, KeyError):
     os.environ["AZURE_OPENAI_ENDPOINT"] = os.getenv("AZURE_OPENAI_ENDPOINT")
     os.environ["AZURE_DEPLOYMENT_NAME"] = os.getenv("AZURE_DEPLOYMENT_NAME")
 
+
 class JioPayChatbot:
     def __init__(self):
         """Initialize the chatbot with Azure OpenAI."""
-        self.embeddings = OpenAIEmbeddings(
-            azure_openai_key=os.environ["AZURE_OPENAI_KEY"],
-            model_kwargs={
-                "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
-                "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"]
-            }
-        )
-        self.text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
-        self.vector_store = None
-        self.qa_chain = None
+        try:
+            self.embeddings = OpenAIEmbeddings(
+                api_key=os.environ["AZURE_OPENAI_KEY"],
+                model_kwargs={
+                    "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
+                    "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"],
+                },
+            )
+            self.text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
+            self.vector_store = None
+            self.qa_chain = None
+        except Exception as e:
+            st.error(f"Error initializing OpenAI Embeddings: {str(e)}")
 
     def create_knowledge_base(self):
         """Load pre-scraped JSON data + Markdown file"""
         documents = []
-        
+
         # Load Markdown file
         try:
-            with open('jiopay_content1.md', 'r', encoding='utf-8') as f:
+            with open("jiopay_content1.md", "r", encoding="utf-8") as f:
                 md_content = f.read()
-                documents.append({
-                    "url": "file://jiopay_content1.md",
-                    "content": md_content
-                })
+                documents.append({"url": "file://jiopay_content1.md", "content": md_content})
         except Exception as e:
             print(f"❌ Error loading Markdown file: {e}")
 
@@ -58,37 +60,41 @@ class JioPayChatbot:
 
         texts = [doc["content"] for doc in documents]
         metadatas = [{"source": doc["url"]} for doc in documents]
-        
+
         docs = self.text_splitter.create_documents(texts, metadatas=metadatas)
         self.vector_store = FAISS.from_documents(docs, self.embeddings)
-    
+
     def initialize_qa(self):
         """Initialize RAG with Azure OpenAI"""
-        llm = AzureOpenAI(
-            azure_openai_key=os.environ["AZURE_OPENAI_KEY"],
-            temperature=0.7,
-            max_tokens=512,
-            model_kwargs={
-                "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
-                "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"]
-            }
-        )
+        try:
+            llm = AzureOpenAI(
+                azure_openai_key=os.environ["AZURE_OPENAI_KEY"],
+                model_kwargs={
+                    "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
+                    "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"],
+                    "temperature": 0.7,
+                    "max_tokens": 512,
+                },
+            )
 
-        self.qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=self.vector_store.as_retriever(),
-            return_source_documents=True
-        )
+            self.qa_chain = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=self.vector_store.as_retriever(),
+                return_source_documents=True,
+            )
+        except Exception as e:
+            st.error(f"Error initializing QA model: {str(e)}")
 
     def ask(self, question: str) -> str:
         """Process user query with RAG pipeline"""
         if not self.qa_chain:
             raise ValueError("QA chain not initialized")
-        
+
         result = self.qa_chain.invoke({"query": question})
         sources = list(set([doc.metadata["source"] for doc in result["source_documents"]]))
         return f"{result['result']}\n\nSources: {sources}"
+
 
 def main():
     chatbot = JioPayChatbot()
@@ -102,6 +108,7 @@ def main():
             break
         answer = chatbot.ask(question)
         print(f"Assistant: {answer}")
+
 
 if __name__ == "__main__":
     main()
