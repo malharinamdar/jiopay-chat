@@ -1,31 +1,36 @@
 import json
 import os
-from langchain_openai import OpenAI, OpenAIEmbeddings
+from langchain_openai import AzureOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_text_splitters import TokenTextSplitter
 from typing import List, Dict
-import os
+import streamlit as st
 from dotenv import load_dotenv
-import streamlit as st  # Add this import
-
 
 # Load environment variables from .env file
 load_dotenv()
 try:
-    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    os.environ["AZURE_OPENAI_API_KEY"] = st.secrets["AZURE_OPENAI_API_KEY"]
+    os.environ["AZURE_OPENAI_ENDPOINT"] = st.secrets["AZURE_OPENAI_ENDPOINT"]
+    os.environ["AZURE_DEPLOYMENT_NAME"] = st.secrets["AZURE_DEPLOYMENT_NAME"]
 except (AttributeError, KeyError):
-    os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-
-
+    os.environ["AZURE_OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_API_KEY")
+    os.environ["AZURE_OPENAI_ENDPOINT"] = os.getenv("AZURE_OPENAI_ENDPOINT")
+    os.environ["AZURE_DEPLOYMENT_NAME"] = os.getenv("AZURE_DEPLOYMENT_NAME")
 
 class JioPayChatbot:
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings()
+        """Initialize the chatbot with Azure OpenAI."""
+        self.embeddings = OpenAIEmbeddings(
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            deployment_name=os.environ["AZURE_DEPLOYMENT_NAME"]
+        )
         self.text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
         self.vector_store = None
         self.qa_chain = None
-    
+
     def create_knowledge_base(self):
         """Load pre-scraped JSON data + Markdown file"""
         documents = []
@@ -57,10 +62,12 @@ class JioPayChatbot:
         self.vector_store = FAISS.from_documents(docs, self.embeddings)
     
     def initialize_qa(self):
-        """Initialize RAG"""
-        llm = OpenAI(
+        """Initialize RAG with Azure OpenAI"""
+        llm = AzureOpenAI(
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            deployment_name=os.environ["AZURE_DEPLOYMENT_NAME"],
             temperature=0.7,
-            model_name="gpt-3.5-turbo-instruct",
             max_tokens=512
         )
 
@@ -72,6 +79,7 @@ class JioPayChatbot:
         )
 
     def ask(self, question: str) -> str:
+        """Process user query with RAG pipeline"""
         if not self.qa_chain:
             raise ValueError("QA chain not initialized")
         
