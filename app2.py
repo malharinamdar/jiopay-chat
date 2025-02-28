@@ -10,7 +10,7 @@ class JioPayChatbot:
         """Initialize the chatbot with Azure OpenAI."""
         self.embeddings = AzureOpenAIEmbeddings(
             openai_api_key=st.secrets["AZURE_OPENAI_KEY"],  # Use st.secrets
-            openai_api_base=st.secrets["AZURE_OPENAI_ENDPOINT"],  # Use st.secrets
+            azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],  # Use azure_endpoint instead of openai_api_base
             deployment=st.secrets["AZURE_EMBEDDINGS_DEPLOYMENT"],  # Use st.secrets
             openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],  # Use st.secrets
             openai_api_type="azure"
@@ -36,7 +36,7 @@ class JioPayChatbot:
 
         # Load JSON pre-scraped data
         try:
-            with open("scraped_data1.json", "r", encoding="utf-8") as f:
+            with open("scraped_data1.json", 'r', encoding='utf-8') as f:
                 scraped_data = json.load(f)
                 documents.extend(scraped_data)
         except Exception as e:
@@ -55,7 +55,7 @@ class JioPayChatbot:
             max_tokens=512,
             deployment_name=st.secrets["AZURE_DEPLOYMENT_NAME"],  # Use st.secrets
             openai_api_key=st.secrets["AZURE_OPENAI_KEY"],  # Use st.secrets
-            openai_api_base=st.secrets["AZURE_OPENAI_ENDPOINT"],  # Use st.secrets
+            azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],  # Use azure_endpoint instead of openai_api_base
             openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],  # Use st.secrets
             openai_api_type="azure"
         )
