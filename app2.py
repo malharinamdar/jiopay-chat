@@ -65,6 +65,7 @@ class JioPayChatbot:
                 deployment=AZURE_DEPLOYMENT_NAME,
                 temperature=0.7,
                 max_tokens=512,
+                model_kwargs={"engine": "text-davinci-003"}
             )
 
             self.qa_chain = RetrievalQA.from_chain_type(
