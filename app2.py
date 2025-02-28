@@ -1,4 +1,5 @@
 import os
+import json  # ✅ Fix: Ensure JSON library is imported
 import streamlit as st
 from dotenv import load_dotenv
 from langchain_openai import AzureOpenAIEmbeddings, AzureOpenAI
@@ -19,7 +20,7 @@ class JioPayChatbot:
         """Initialize the chatbot with Azure OpenAI."""
         try:
             self.embeddings = AzureOpenAIEmbeddings(
-                azure_openai_key=AZURE_OPENAI_KEY,
+                api_key=AZURE_OPENAI_KEY,  # ✅ Fix: Use `api_key` instead of `azure_openai_key`
                 azure_endpoint=AZURE_OPENAI_ENDPOINT,
                 deployment=AZURE_DEPLOYMENT_NAME,
             )
@@ -44,7 +45,7 @@ class JioPayChatbot:
         # Load JSON pre-scraped data
         try:
             with open("scraped_data1.json", "r", encoding="utf-8") as f:
-                scraped_data = json.load(f)
+                scraped_data = json.load(f)  # ✅ Fix: JSON library now imported
                 documents.extend(scraped_data)
         except Exception as e:
             st.error(f"❌ Error loading JSON: {e}")
@@ -59,7 +60,7 @@ class JioPayChatbot:
         """Initialize Retrieval-Augmented Generation (RAG) with Azure OpenAI"""
         try:
             llm = AzureOpenAI(
-                azure_openai_key=AZURE_OPENAI_KEY,
+                api_key=AZURE_OPENAI_KEY,  # ✅ Fix: Use `api_key`
                 azure_endpoint=AZURE_OPENAI_ENDPOINT,
                 deployment=AZURE_DEPLOYMENT_NAME,
                 temperature=0.7,
