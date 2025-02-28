@@ -52,8 +52,8 @@ class JioPayChatbot:
         """Initialize RAG with Azure OpenAI"""
         llm = AzureOpenAI(
             temperature=0.7,
-            max_tokens=512,
-            azure_deployment=st.secrets["AZURE_DEPLOYMENT_NAME"],
+            max_tokens=800,
+            deployment_name=st.secrets["AZURE_DEPLOYMENT_NAME"],
             openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],
             azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],
             openai_api_key=st.secrets["AZURE_OPENAI_KEY"],
@@ -67,7 +67,7 @@ class JioPayChatbot:
             return_source_documents=True
         )
 
-    def ask(self, question: str) -> dict:
+    def ask(self, question: str) -> str:
         """Process user query with RAG pipeline"""
         if not self.qa_chain:
             raise ValueError("QA chain not initialized")
