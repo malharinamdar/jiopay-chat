@@ -4,18 +4,17 @@ from langchain_openai import AzureOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_text_splitters import TokenTextSplitter
-from typing import List, Dict
 import streamlit as st
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 try:
-    os.environ["AZURE_OPENAI_API_KEY"] = st.secrets["AZURE_OPENAI_KEY"]
+    os.environ["AZURE_OPENAI_KEY"] = st.secrets["AZURE_OPENAI_KEY"]
     os.environ["AZURE_OPENAI_ENDPOINT"] = st.secrets["AZURE_OPENAI_ENDPOINT"]
     os.environ["AZURE_DEPLOYMENT_NAME"] = st.secrets["AZURE_DEPLOYMENT_NAME"]
 except (AttributeError, KeyError):
-    os.environ["AZURE_OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_KEY")
+    os.environ["AZURE_OPENAI_KEY"] = os.getenv("AZURE_OPENAI_KEY")
     os.environ["AZURE_OPENAI_ENDPOINT"] = os.getenv("AZURE_OPENAI_ENDPOINT")
     os.environ["AZURE_DEPLOYMENT_NAME"] = os.getenv("AZURE_DEPLOYMENT_NAME")
 
@@ -23,9 +22,11 @@ class JioPayChatbot:
     def __init__(self):
         """Initialize the chatbot with Azure OpenAI."""
         self.embeddings = OpenAIEmbeddings(
-            api_key=os.environ["AZURE_OPENAI_KEY"],
-            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            deployment_name=os.environ["AZURE_DEPLOYMENT_NAME"]
+            azure_openai_key=os.environ["AZURE_OPENAI_KEY"],
+            model_kwargs={
+                "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
+                "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"]
+            }
         )
         self.text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
         self.vector_store = None
@@ -64,11 +65,13 @@ class JioPayChatbot:
     def initialize_qa(self):
         """Initialize RAG with Azure OpenAI"""
         llm = AzureOpenAI(
-            api_key=os.environ["AZURE_OPENAI_KEY"],
-            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            deployment_name=os.environ["AZURE_DEPLOYMENT_NAME"],
+            azure_openai_key=os.environ["AZURE_OPENAI_KEY"],
             temperature=0.7,
-            max_tokens=512
+            max_tokens=512,
+            model_kwargs={
+                "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
+                "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"]
+            }
         )
 
         self.qa_chain = RetrievalQA.from_chain_type(
