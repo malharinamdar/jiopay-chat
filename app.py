@@ -39,7 +39,7 @@ def main():
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.write(message["content"])
+            st.markdown(message["content"])
             if message["role"] == "assistant" and message.get("sources"):
                 with st.expander("View Sources"):
                     st.write(message["sources"])
@@ -49,22 +49,27 @@ def main():
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
             with st.chat_message("user"):
-                st.write(user_input)
+                st.markdown(user_input)
+            
             with st.chat_message("assistant"):
-                with st.spinner("Thinking..."):
+                with st.spinner("Analyzing your question..."):
                     try:
                         response = st.session_state.chatbot.ask(user_input)
                         answer = response["answer"]
                         sources = response["sources"]
-                        st.write(answer)
-                        if sources:
-                            with st.expander("View Sources"):
-                                st.write(sources)
+                        
+                        st.markdown(answer)
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": answer,
                             "sources": sources
                         })
+                        
+                        if sources:
+                            with st.expander("Reference Sources"):
+                                st.write("Sources used for this answer:")
+                                for source in sources:
+                                    st.write(f"- {source}")
                     except Exception as e:
                         st.error(f"Error generating response: {str(e)}")
 
