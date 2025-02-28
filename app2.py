@@ -1,8 +1,7 @@
-import json
 import os
 import streamlit as st
 from dotenv import load_dotenv
-from langchain_openai import AzureOpenAI, OpenAIEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings, AzureOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_text_splitters import TokenTextSplitter
@@ -10,32 +9,25 @@ from langchain_text_splitters import TokenTextSplitter
 # Load environment variables
 load_dotenv()
 
-try:
-    os.environ["AZURE_OPENAI_KEY"] = st.secrets["AZURE_OPENAI_KEY"]
-    os.environ["AZURE_OPENAI_ENDPOINT"] = st.secrets["AZURE_OPENAI_ENDPOINT"]
-    os.environ["AZURE_DEPLOYMENT_NAME"] = st.secrets["AZURE_DEPLOYMENT_NAME"]
-except (AttributeError, KeyError):
-    os.environ["AZURE_OPENAI_KEY"] = os.getenv("AZURE_OPENAI_KEY")
-    os.environ["AZURE_OPENAI_ENDPOINT"] = os.getenv("AZURE_OPENAI_ENDPOINT")
-    os.environ["AZURE_DEPLOYMENT_NAME"] = os.getenv("AZURE_DEPLOYMENT_NAME")
-
+# Fetch secrets from Streamlit Cloud OR environment variables
+AZURE_OPENAI_KEY = st.secrets.get("AZURE_OPENAI_KEY", os.getenv("AZURE_OPENAI_KEY"))
+AZURE_OPENAI_ENDPOINT = st.secrets.get("AZURE_OPENAI_ENDPOINT", os.getenv("AZURE_OPENAI_ENDPOINT"))
+AZURE_DEPLOYMENT_NAME = st.secrets.get("AZURE_DEPLOYMENT_NAME", os.getenv("AZURE_DEPLOYMENT_NAME"))
 
 class JioPayChatbot:
     def __init__(self):
         """Initialize the chatbot with Azure OpenAI."""
         try:
-            self.embeddings = OpenAIEmbeddings(
-                api_key=os.environ["AZURE_OPENAI_KEY"],
-                model_kwargs={
-                    "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
-                    "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"],
-                },
+            self.embeddings = AzureOpenAIEmbeddings(
+                azure_openai_key=AZURE_OPENAI_KEY,
+                azure_endpoint=AZURE_OPENAI_ENDPOINT,
+                deployment=AZURE_DEPLOYMENT_NAME,
             )
             self.text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
             self.vector_store = None
             self.qa_chain = None
         except Exception as e:
-            st.error(f"Error initializing OpenAI Embeddings: {str(e)}")
+            st.error(f"❌ Error initializing embeddings: {str(e)}")
 
     def create_knowledge_base(self):
         """Load pre-scraped JSON data + Markdown file"""
@@ -47,16 +39,15 @@ class JioPayChatbot:
                 md_content = f.read()
                 documents.append({"url": "file://jiopay_content1.md", "content": md_content})
         except Exception as e:
-            print(f"❌ Error loading Markdown file: {e}")
+            st.error(f"❌ Error loading Markdown file: {e}")
 
         # Load JSON pre-scraped data
         try:
             with open("scraped_data1.json", "r", encoding="utf-8") as f:
                 scraped_data = json.load(f)
                 documents.extend(scraped_data)
-                print("✅ Loaded scraped data from `scraped_data1.json`")
         except Exception as e:
-            print(f"❌ Error loading JSON: {e}")
+            st.error(f"❌ Error loading JSON: {e}")
 
         texts = [doc["content"] for doc in documents]
         metadatas = [{"source": doc["url"]} for doc in documents]
@@ -65,16 +56,14 @@ class JioPayChatbot:
         self.vector_store = FAISS.from_documents(docs, self.embeddings)
 
     def initialize_qa(self):
-        """Initialize RAG with Azure OpenAI"""
+        """Initialize Retrieval-Augmented Generation (RAG) with Azure OpenAI"""
         try:
             llm = AzureOpenAI(
-                azure_openai_key=os.environ["AZURE_OPENAI_KEY"],
-                model_kwargs={
-                    "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"],
-                    "deployment_name": os.environ["AZURE_DEPLOYMENT_NAME"],
-                    "temperature": 0.7,
-                    "max_tokens": 512,
-                },
+                azure_openai_key=AZURE_OPENAI_KEY,
+                azure_endpoint=AZURE_OPENAI_ENDPOINT,
+                deployment=AZURE_DEPLOYMENT_NAME,
+                temperature=0.7,
+                max_tokens=512,
             )
 
             self.qa_chain = RetrievalQA.from_chain_type(
@@ -84,7 +73,7 @@ class JioPayChatbot:
                 return_source_documents=True,
             )
         except Exception as e:
-            st.error(f"Error initializing QA model: {str(e)}")
+            st.error(f"❌ Error initializing QA model: {str(e)}")
 
     def ask(self, question: str) -> str:
         """Process user query with RAG pipeline"""
@@ -94,21 +83,3 @@ class JioPayChatbot:
         result = self.qa_chain.invoke({"query": question})
         sources = list(set([doc.metadata["source"] for doc in result["source_documents"]]))
         return f"{result['result']}\n\nSources: {sources}"
-
-
-def main():
-    chatbot = JioPayChatbot()
-    chatbot.create_knowledge_base()
-    chatbot.initialize_qa()
-
-    print("Chatbot Ready!")
-    while True:
-        question = input("You: ")
-        if question.lower() == "exit":
-            break
-        answer = chatbot.ask(question)
-        print(f"Assistant: {answer}")
-
-
-if __name__ == "__main__":
-    main()
