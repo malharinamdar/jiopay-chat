@@ -9,10 +9,10 @@ class JioPayChatbot:
     def __init__(self):
         """Initialize the chatbot with Azure OpenAI."""
         self.embeddings = AzureOpenAIEmbeddings(
-            openai_api_key=st.secrets["AZURE_OPENAI_KEY"],  # Use st.secrets
-            azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],  # Use azure_endpoint instead of openai_api_base
-            deployment=st.secrets["AZURE_EMBEDDINGS_DEPLOYMENT"],  # Use st.secrets
-            openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],  # Use st.secrets
+            azure_deployment=st.secrets["AZURE_EMBEDDINGS_DEPLOYMENT"],
+            openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],
+            azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],
+            openai_api_key=st.secrets["AZURE_OPENAI_KEY"],
             openai_api_type="azure"
         )
         self.text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
@@ -53,10 +53,10 @@ class JioPayChatbot:
         llm = AzureOpenAI(
             temperature=0.7,
             max_tokens=512,
-            deployment_name=st.secrets["AZURE_DEPLOYMENT_NAME"],  # Use st.secrets
-            openai_api_key=st.secrets["AZURE_OPENAI_KEY"],  # Use st.secrets
-            azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],  # Use azure_endpoint instead of openai_api_base
-            openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],  # Use st.secrets
+            azure_deployment=st.secrets["AZURE_DEPLOYMENT_NAME"],
+            openai_api_version=st.secrets["AZURE_OPENAI_API_VERSION"],
+            azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],
+            openai_api_key=st.secrets["AZURE_OPENAI_KEY"],
             openai_api_type="azure"
         )
 
@@ -67,7 +67,7 @@ class JioPayChatbot:
             return_source_documents=True
         )
 
-    def ask(self, question: str) -> str:
+    def ask(self, question: str) -> dict:
         """Process user query with RAG pipeline"""
         if not self.qa_chain:
             raise ValueError("QA chain not initialized")
